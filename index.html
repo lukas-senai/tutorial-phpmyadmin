@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tutorial phpMyAdmin</title>
+  <meta name="description" content="Guia passo a passo das principais telas e funções do phpMyAdmin com imagens e dicas práticas." />
+  <style>
+    :root{
+      --brand:#ff58ae;
+      --brand-ink:#7a1a4f;
+      --ink:#1f2937;
+      --muted:#6b7280;
+      --bg:#ffffff;
+      --panel:#ffffff;
+      --panel-alt:#fff4f9;
+      --line:#eef2f7;
+    }
+    html{scroll-behavior:smooth}
+    body{margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial; color:var(--ink); background:var(--bg)}
+
+    /* ===== Sidebar fixa (bonita e limpa) ===== */
+    .sidebar{position:fixed; inset:0 auto 0 0; width:300px; background:linear-gradient(180deg, var(--panel-alt), #fff); border-right:1px solid var(--line); box-shadow: 8px 0 24px rgba(0,0,0,.03); z-index:100}
+    .sidebar-inner{padding:18px 16px 28px}
+    .brand{display:flex; align-items:center; gap:10px; margin:6px 8px 14px}
+    .logo{width:28px; height:28px; border-radius:10px; background:var(--brand); box-shadow:0 6px 18px rgba(255,88,174,.35)}
+    .brand h1{font-size:1.02rem; margin:0; letter-spacing:.2px}
+    .brand small{color:var(--muted)}
+    .toc-title{font-size:.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:.12em; margin:12px 8px 8px}
+    .toc{list-style:none; padding:0; margin:0}
+    .toc a{display:block; padding:8px 10px; margin:2px 6px; border-radius:12px; text-decoration:none; color:var(--ink); border:1px solid transparent}
+    .toc a:hover{background:#fff; border-color:var(--line)}
+    .toc a.active{background:#fff; border-color:var(--brand); box-shadow:0 0 0 3px rgba(255,88,174,.15)}
+
+    /* ===== Main ===== */
+    main{margin-left:300px}
+    .wrap{max-width:1000px; margin:0 auto; padding:24px 22px}
+
+    .page-title{margin:8px 0 4px; font-size:1.8rem}
+    .page-sub{margin:0; color:var(--muted)}
+
+    /* Seções com separação elegante */
+    section[id]{scroll-margin-top:24px}
+    .section{position:relative; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px 20px 16px; margin:22px 0; box-shadow: 0 6px 18px rgba(0,0,0,.03)}
+    .section::before{content:""; position:absolute; left:0; top:0; width:100%; height:6px; background:linear-gradient(90deg, var(--brand), transparent 100%); border-top-left-radius:14px; border-top-right-radius:14px}
+    .section h2{margin:6px 0 8px; font-size:1.35rem}
+    .section h3{margin:14px 0 6px; font-size:1.05rem; color:var(--brand-ink)}
+
+    .steps{margin:10px 0 0 0; padding-left:18px}
+    .steps li{margin:8px 0}
+    .substeps{margin:6px 0 2px 18px}
+
+    .screenshot{display:block; width:100%; max-width:860px; margin:10px 0; border:2px dashed var(--brand); border-radius:12px; padding:10px; background:#fff;}
+    .caption{color:var(--muted); font-size:.9rem; margin-top:-6px}
+
+    .callout{border:1px solid var(--line); background:var(--panel-alt); padding:12px 12px; border-radius:10px; margin:10px 0}
+
+    code.inline{background:#ffe5f2; border:1px solid rgba(255,88,174,.35); padding:2px 6px; border-radius:6px}
+    pre{background:#0f172a; color:#e5e7eb; padding:14px; border-radius:12px; overflow:auto}
+
+    /* Erros comuns — estilo caprichado */
+    .issues{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+    .issue{position:relative; background:#fff; border:1px solid var(--line); border-left:6px solid var(--brand); border-radius:12px; padding:12px 12px; box-shadow:0 4px 14px rgba(0,0,0,.03)}
+    .issue b{display:block; margin-bottom:4px; color:#0f172a}
+    .issue small{color:var(--muted)}
+    @media (max-width: 900px){ .issues{grid-template-columns:1fr} }
+
+    /* Glossário chips */
+    .chips{display:flex; flex-wrap:wrap; gap:10px}
+    .chip{border:1px solid var(--line); background:#fff; border-radius:999px; padding:8px 12px; box-shadow:0 2px 10px rgba(0,0,0,.03)}
+    .chip b{color:#0f172a}
+
+    footer{padding:34px 0; color:var(--muted); text-align:center}
+
+    /* Responsivo */
+    @media (max-width: 960px){
+      .sidebar{transform:translateX(-100%); transition:transform .25s ease; width:86%; max-width:320px; z-index:100}
+      .sidebar.open{transform:translateX(0)}
+      .sidebar-toggle{position:fixed; top:10px; left:10px; z-index:110; background:var(--brand); color:#fff; border:none; padding:10px 12px; border-radius:10px; font-weight:700}
+      main{margin-left:0}
+      .overlay{position:fixed; inset:0; background:rgba(0,0,0,.2); display:none; z-index:90}
+      .overlay.show{display:block}
+    }
+    a{color:var(--brand)}
+    a:hover{color:#e74e9f}
+
+    /* Estilo para o modal da imagem */
+    .image-modal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.8);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .image-modal img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+      animation: zoomIn 0.2s ease;
+    }
+
+    @keyframes zoomIn {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .image-modal:target {
+      display: flex;
+    }
+
+    /* Cursor indicando clique nas imagens */
+    .enlargeable {
+      cursor: zoom-in;
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-inner">
+      <div class="brand">
+        <div>
+          <h1>phpMyAdmin</h1>
+          <small>Sumário</small>
+        </div>
+      </div>
+      <div class="toc-title">Navegação</div>
+      <ul class="toc" id="toc">
+        <li><a href="#acesso">Como acessar</a></li>
+        <li><a href="#tela-inicial">Tela inicial</a></li>
+        <li><a href="#criar-banco">Criar banco de dados</a></li>
+        <li><a href="#criar-tabela">Criar tabela</a></li>
+        <li><a href="#inserir-registros">Inserir registros</a></li>
+        <li><a href="#visualizar-editar">Visualizar / Editar / Excluir</a></li>
+        <li><a href="#estrutura">Alterar estrutura</a></li>
+        <li><a href="#relacoes">Criar relações</a></li>
+        <li><a href="#exportar">Exportar (backup)</a></li>
+        <li><a href="#importar">Importar (restauração)</a></li>
+        <li><a href="#erros-comuns">Erros comuns & soluções</a></li>
+        <li><a href="#glossario">Glossário rápido</a></li>
+        <li><a href="#sql">Executar consultas SQL</a></li>
+        <li><a href="#fim">Encerramento</a></li>
+      </ul>
+    </div>
+  </aside>
+  <div class="overlay" id="overlay"></div>
+
+  <main>
+    <div class="wrap">
+      <h1 class="page-title">Tutorial phpMyAdmin — Passo a passo</h1>
+      <p class="page-sub">Trabalho local com MySQL/MariaDB via navegador, com foco no essencial.</p>
+
+      <section id="acesso" class="section">
+        <h2>Como acessar</h2>
+        <ol class="steps">
+          <li>Abra o navegador e acesse <code class="inline">http://localhost/phpmyadmin</code> ou <code class="inline">http://localhost:8080/phpmyadmin</code>.</li>
+          <li>Informe o usuário e a senha definidos na sua instalação local. Normalmente usuário <code class="inline">root</code> e sem senha.</li>
+        </ol>
+      </section>
+
+      <section id="tela-inicial" class="section">
+        <h2>Tela inicial</h2>
+        <p>Você verá a barra lateral com os bancos, as abas na parte superior (Bancos de dados, SQL, Status, Contas de usuário, Exportar, Importar, etc.) e o painel central.</p>
+        <ul>
+          <li><strong>Barra lateral:</strong> lista os bancos; clique em um para ver suas tabelas.</li>
+          <li><strong>Abas:</strong> atalhos para criar bancos, importar/exportar e outras ações.</li>
+          <li><strong>Painel central:</strong> status e links rápidos.</li>
+        </ul>
+        <img class="screenshot enlargeable" src="prints/tela-inicial.png" alt="Tela inicial do phpMyAdmin">
+      </section>
+
+      <section id="criar-banco" class="section">
+        <h2>Criar banco de dados</h2>
+        <ol class="steps">
+          <li>Clique na aba <strong>Bancos de dados</strong>.</li>
+          <li>Em <strong>Criar banco de dados</strong>, digite um nome (ex.: <code class="inline">escola</code>).</li>
+          <li>Escolha a collation <code class="inline">utf8mb4_general_ci</code>.</li>
+          <li>Clique em <strong>Criar</strong>.</li>
+        </ol>
+        <img class="screenshot enlargeable" src="prints/criar-banco.png" alt="Formulário para criar banco de dados">
+      </section>
+
+      <section id="criar-tabela" class="section">
+        <h2>Criar tabela</h2>
+        <p>Exemplo de tabela <strong>alunos</strong> no banco <strong>escola</strong>.</p>
+        <ol class="steps">
+          <li>Na barra lateral, clique no banco (ex.: <code class="inline">escola</code>).</li>
+          <li>No painel central, informe o <strong>nome da tabela</strong> (ex.: <code class="inline">alunos</code>) e a <strong>quantidade de colunas</strong> (ex.: 5). Clique em <strong>Criar</strong>.</li>
+          <li>Preencha as colunas conforme o modelo:</li>
+        </ol>
+        <ul class="substeps">
+          <li><code class="inline">id_aluno</code> — <em>INT</em>, marque <em>A_I</em> (Auto Increment) e defina como <strong>Primária</strong>.</li>
+          <li><code class="inline">nome</code> — <em>VARCHAR(100)</em>, <em>NOT NULL</em>.</li>
+          <li><code class="inline">email</code> — <em>VARCHAR(120)</em>.</li>
+          <li><code class="inline">data_nascimento</code> — <em>DATE</em>.</li>
+          <li><code class="inline">ativo</code> — <em>TINYINT(1)</em> (0 ou 1).</li>
+        </ul>
+        <ol class="steps" start="4">
+          <li>Clique em <strong>Salvar</strong>.</li>
+        </ol>
+        <img class="screenshot enlargeable" src="prints/criar-tabela.png" alt="Formulário de criação de tabela">
+        <img class="screenshot enlargeable" src="prints/criar-tabela-colunas.png" alt="Preenchimento das colunas">
+        <div class="callout"><strong>Erro comum:</strong> esquecer de marcar <em>A_I</em> na coluna <code class="inline">id</code> ou não definir a chave primária.</div>
+      </section>
+
+      <section id="inserir-registros" class="section">
+        <h2>Inserir registros</h2>
+        <ol class="steps">
+          <li>Clique na tabela (ex.: <code class="inline">alunos</code>) na barra lateral.</li>
+          <li>Acesse a aba <strong>Inserir</strong>.</li>
+          <li>Preencha os campos (deixe <code class="inline">id</code> vazio se estiver com Auto Increment) e clique em <strong>Executar</strong>.</li>
+        </ol>
+        <img class="screenshot enlargeable" src="prints/inserir.png" alt="Aba Inserir com formulário">
+        <div class="callout"><strong>Dica:</strong> o formato para datas é <code class="inline">YYYY-MM-DD</code>.</div>
+      </section>
+
+      <section id="visualizar-editar" class="section">
+        <h2>Visualizar, editar e excluir registros</h2>
+        <ol class="steps">
+          <li>Abra a aba <strong>Visualizar</strong> da tabela.</li>
+          <li>Use os ícones: ✏️ para editar, ⛔ para excluir, ⬅️ para copiar um registro.</li>
+          <li>Use o campo <em>Filtrar linhas</em> para localizar registros rapidamente.</li>
+        </ol>
+        <img class="screenshot enlargeable" src="prints/visualizar-1.png" alt="Listagem de registros">
+        <img class="screenshot enlargeable" src="prints/visualizar-2.png" alt="Tela de edição de registro">
+        <div class="caption">Tela de edição de um registro.</div>
+      </section>
+
+      <section id="estrutura" class="section">
+        <h2>Alterar estrutura da tabela</h2>
+        <ol class="steps">
+          <li>Acesse a aba <strong>Estrutura</strong> da tabela.</li>
+          <li>Para <strong>adicionar colunas</strong>, use a opção <em>Adicionar X campo(s)</em> e selecionar após qual coluna a nova ficará.</li>
+          <li>Para <strong>editar</strong> tipo/tamanho/nulidade, clique em ✏️<em>Alterar</em> ao lado da coluna.</li>
+        </ol>
+        <img class="screenshot enlargeable" src="prints/estrutura-1.png" alt="Aba Estrutura com colunas">
+        <img class="screenshot enlargeable" src="prints/estrutura-2.png" alt="Adicionar colunas">
+      </section>
+
+      <section id="relacoes" class="section">
+        <h2>Criar relações entre tabelas (chaves estrangeiras)</h2>
+        <p>Exemplo: relacionar <strong>matriculas</strong> → <strong>alunos</strong> (FK <code class="inline">aluno_id</code> → <code class="inline">alunos.id</code>).</p>
+        <ol class="steps">
+          <li>Garanta que ambas as tabelas usam o mecanismo <strong>InnoDB</strong> e o mesmo charset/collation.</li>
+          <li>Na tabela <strong>matriculas</strong>, crie a coluna <code class="inline">aluno_id</code> do tipo <em>INT</em> (mesmo tipo da PK em <code class="inline">alunos</code>).</li>
+          <li>Abra a aba <strong>Estrutura</strong> de <strong>matriculas</strong> e clique em <strong>Relacionamentos</strong> ou <strong>Visão de relação(ões)</strong>.</li>
+          <li>Em <strong>Restrições de chave estrangeira</strong>, selecione:
+            <ul class="substeps">
+              <li><em>Coluna</em>: <code class="inline">aluno_id</code></li>
+              <li><em>Tabela</em>: <code class="inline">alunos</code></li>
+              <li><em>Coluna</em>: <code class="inline">id</code></li>
+              <li><em>ON DELETE</em> / <em>ON UPDATE</em>: escolha o comportamento (ex.: <em>RESTRICT</em> ou <em>CASCADE</em>).</li>
+            </ul>
+          </li>
+          <li>Clique em <strong>Salvar</strong>.</li>
+        </ol>
+        <img class="screenshot enlargeable" src="prints/relacao-1.png" alt="Tela Relation view">
+        <img class="screenshot enlargeable" src="prints/relacao-2.png" alt="Configuração da chave estrangeira">
+        <div class="caption">
+          Perceba que agora a coluna id_aluno aparece com uma chave cinza, indicando que é uma chave estrangeira.
+          <br>
+          Logo abaixo da tabela está identificado cada chave presente na tabela.
+        </div>
+      </section>
+
+      <section id="exportar" class="section">
+        <h2>Exportar (backup)</h2>
+        <ol class="steps">
+          <li>Selecione o banco na barra lateral.</li>
+          <li>Acesse a aba <strong>Exportar</strong>.</li>
+          <li>Escolha <strong>Rápido</strong> (ou <em>Personalizado</em>) e formato <strong>SQL</strong>.</li>
+          <li>Clique em <strong>Executar</strong> para baixar o arquivo.</li>
+        </ol>
+        <img class="screenshot enlargeable" src="prints/exportar.png" alt="Aba Exportar modo Rápido">
+      </section>
+
+      <section id="importar" class="section">
+        <h2>Importar (restauração)</h2>
+        <ol class="steps">
+          <li>Crie (se necessário) um banco vazio e selecione-o.</li>
+          <li>Acesse a aba <strong>Importar</strong>.</li>
+          <li>Escolha o arquivo <code class="inline">.sql</code> e clique em <strong>Executar</strong>.</li>
+        </ol>
+        <img class="screenshot enlargeable" src="prints/importar.png" alt="Aba Importar com arquivo selecionado">
+      </section>
+
+      <section id="erros-comuns" class="section">
+        <h2>Erros comuns & soluções</h2>
+        <div class="issues">
+          <div class="issue">
+            <b>Arquivo .sql muito grande ao importar</b>
+            <small>Divida por tabelas ou ajuste limites de upload na instalação local (<code class="inline">upload_max_filesize</code>).</small>
+          </div>
+          <div class="issue">
+            <b>Acentos quebrados / caracteres estranhos</b>
+            <small>Padronize para <code class="inline">utf8mb4</code> no banco, tabelas e exportação/importação.</small>
+          </div>
+          <div class="issue">
+            <b>Chave estrangeira impede excluir</b>
+            <small>Exclua registros filhos primeiro ou ajuste a regra de <em>ON DELETE</em> (com cuidado).</small>
+          </div>
+          <div class="issue">
+            <b>Duplicate entry (valor duplicado)</b>
+            <small>PK/campo único já existe. Verifique o valor e os índices da tabela.</small>
+          </div>
+          <div class="issue">
+            <b>Erro de sintaxe SQL</b>
+            <small>Confira nomes de tabelas/colunas e vírgulas; use a aba <em>Estrutura</em> para checar a definição.</small>
+          </div>
+          <div class="issue">
+            <b>Tipos incompatíveis em FK</b>
+            <small>Garante que FK e PK têm mesmo tipo/tamanho (ex.: <em>INT</em> ↔ <em>INT</em>).</small>
+          </div>
+          <div class="issue">
+            <b>Engine errado (MyISAM)</b>
+            <small>Troque para <em>InnoDB</em> para usar chaves estrangeiras e transações.</small>
+          </div>
+          <div class="issue">
+            <b>Data inválida (0000-00-00)</b>
+            <small>Insira uma data válida; confira modo <em>STRICT</em> se estiver habilitado.</small>
+          </div>
+        </div>
+      </section>
+
+      <section id="glossario" class="section">
+        <h2>Glossário rápido</h2>
+        <div class="chips">
+          <div class="chip"><b>Banco de dados</b>: conjunto de tabelas relacionadas.</div>
+          <div class="chip"><b>Tabela</b>: estrutura com colunas (campos) e linhas (registros).</div>
+          <div class="chip"><b>PK (Primary Key)</b>: identifica unicamente cada registro.</div>
+          <div class="chip"><b>FK (Foreign Key)</b>: cria relação entre tabelas.</div>
+          <div class="chip"><b>Índice</b>: acelera buscas em colunas.</div>
+          <div class="chip"><b>Collation/Charset</b>: regras e codificação de texto.</div>
+          <div class="chip"><b>InnoDB</b>: mecanismo que permite FKs e transações.</div>
+        </div>
+      </section>
+
+      <section id="sql" class="section">
+        <h2>Executar consultas SQL (referência)</h2>
+        <p>Quando precisar executar um comando manualmente:</p>
+        <ol class="steps">
+          <li>Selecione o banco ou a tabela (define o contexto).</li>
+          <li>Abra a aba <strong>SQL</strong>, digite o comando e clique em <strong>Executar</strong>.</li>
+        </ol>
+        <pre><code>SELECT * FROM alunos ORDER BY nome;</code></pre>
+        <div class="caption">Exemplo simples de consulta.</div>
+        <img class="screenshot enlargeable" src="prints/sql.png" alt="Aba SQL com um SELECT simples">
+      </section>
+
+      <section id="fim" class="section">
+        <h2>Encerramento</h2>
+        <p>Com essas telas e procedimentos, é possível criar bancos e tabelas, inserir/editar dados, relacionar tabelas e fazer backups/restaurações no ambiente local.</p>
+        <p>Não se assuste com a quantidade de informações e botões que aparecem na tela, foque no que você precisa e siga este tutorial.</p>
+      </section>
+
+      <footer>
+        Feito com ❤️ pelo professor Lucas
+      </footer>
+    </div>
+  </main>
+
+  <button class="sidebar-toggle" id="menuBtn" aria-controls="sidebar" aria-expanded="false" style="display:none">☰ Sumário</button>
+
+  <script>
+    // Toggle da sidebar no mobile
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const btn = document.getElementById('menuBtn');
+    const mq = window.matchMedia('(max-width: 960px)');
+    function applyMobile(e){
+      btn.style.display = e.matches ? 'inline-block' : 'none';
+      if(!e.matches){ sidebar.classList.remove('open'); overlay.classList.remove('show'); btn.setAttribute('aria-expanded','false'); }
+    }
+    mq.addEventListener('change', applyMobile); applyMobile(mq);
+    btn.addEventListener('click', ()=>{ const open = sidebar.classList.toggle('open'); overlay.classList.toggle('show', open); btn.setAttribute('aria-expanded', String(open)); });
+    overlay.addEventListener('click', ()=>{ sidebar.classList.remove('open'); overlay.classList.remove('show'); btn.setAttribute('aria-expanded','false'); });
+
+    // Scrollspy: realça seção ativa no sumário
+    const links = Array.from(document.querySelectorAll('#toc a'));
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{ if(e.isIntersecting){ const id = '#' + e.target.id; links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === id)); } });
+    }, {rootMargin: '0px 0px -70% 0px', threshold: [0, 1]});
+    document.querySelectorAll('section[id]').forEach(sec => io.observe(sec));
+  </script>
+
+  <div id="imageModal" class="image-modal">
+    <img id="modalImage" src="" alt="Imagem ampliada">
+  </div>
+  <script>
+    document.querySelectorAll('img.enlargeable').forEach(img => {
+      img.addEventListener('click', () => {
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+        modalImg.src = img.src;
+        modal.style.display = 'flex';
+      });
+    });
+
+    const modal = document.getElementById('imageModal');
+
+    modal.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === "Escape") {
+        modal.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
