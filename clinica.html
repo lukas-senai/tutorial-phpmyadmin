@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tutorial Banco de Dados — Clínica Médica</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      <div class="brand">
+        <h1>Clínica</h1>
+      </div>
+      <p class="toc-title">Navegação</p>
+      <ul class="toc">
+        <li><a href="#modelo">Modelo do Banco</a></li>
+        <li><a href="#criar-banco">Criar Banco</a></li>
+        <li><a href="#pacientes">Pacientes</a></li>
+        <li><a href="#medicos">Médicos</a></li>
+        <li><a href="#consultas">Consultas</a></li>
+        <li><a href="#exames">Exames</a></li>
+        <li><a href="#consultas-exames">Consultas_Exames</a></li>
+        <li><a href="#relacoes">Relações</a></li>
+        <li><a href="#importar">Verificação SQL</a></li>
+        <li><a href="#popular">Inserir Registros</a></li>
+        <li><a href="#conclusao">Conclusão</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main>
+    <div class="wrap">
+      <h1 class="page-title">Tutorial Banco de Dados — Clínica Médica</h1>
+      <p class="page-sub">Passo a passo a criar um banco de dados completo para uma clínica médica usando phpMyAdmin.</p>
+
+      <section id="modelo" class="section">
+        <h2>Modelo do Banco de Dados</h2>
+        <p>O banco <code>clinica_medica</code> organiza os dados da clínica em cinco entidades principais: pacientes, médicos, consultas, exames e consultas_exames.</p>
+
+        <!-- <div class="screenshot">
+          <div style="height:250px; display:flex; align-items:center; justify-content:center; color:var(--muted); font-style:italic;">
+            Espaço para diagrama do modelo do banco
+          </div>
+        </div> -->
+
+        <h3>Entidades</h3>
+        <ul class="substeps">
+          <li><b>Pacientes:</b> representa cada pessoa atendida na clínica, com seus dados pessoais e contato.</li>
+          <li><b>Médicos:</b> armazena informações dos profissionais que atendem na clínica.</li>
+          <li><b>Consultas:</b> registros de cada consulta, indicando paciente, médico, data, horário e status.</li>
+          <li><b>Exames:</b> lista de exames disponíveis, incluindo descrição e valor.</li>
+          <li><b>Consultas_Exames:</b> tabela associativa que indica quais exames foram solicitados em cada consulta, incluindo quantidade.</li>
+        </ul>
+
+        <h3>Relacionamentos</h3>
+        <ul class="substeps">
+          <li>Um paciente pode ter várias consultas.</li>
+          <li>Um médico pode atender várias consultas.</li>
+          <li>Cada consulta pode ter vários exames (Consultas_Exames).</li>
+          <li>Um mesmo exame pode estar em várias consultas.</li>
+        </ul>
+
+        <h3>Observações do Modelo</h3>
+        <ul class="substeps">
+          <li>O modelo é simples e evita redundâncias, usando uma tabela associativa para relacionar consultas e exames.</li>
+          <li>Cada tabela tem sua própria chave primária para garantir unicidade e facilitar futuras consultas.</li>
+          <li>O status da consulta é armazenado como VARCHAR para permitir flexibilidade de valores.</li>
+        </ul>
+      </section>
+
+      <section id="criar-banco" class="section">
+        <h2>Criar Banco de Dados</h2>
+        <ol class="steps">
+          <li>Acesse o phpMyAdmin (<code>http://localhost/phpmyadmin</code>).</li>
+          <li>Clique na aba <strong>Bancos de dados</strong>.</li>
+          <li>Digite <code>clinica_medica</code> e escolha collation <code>utf8mb4_general_ci</code>.</li>
+          <li>Clique em <strong>Criar</strong>. O banco será criado e aparecerá na lista à esquerda.</li>
+        </ol>
+      </section>
+
+      <section id="pacientes" class="section">
+        <h2>Criar tabela Pacientes</h2>
+        <ol class="steps">
+          <li>Selecione o banco <code>clinica_medica</code> e clique em <strong>Criar tabela</strong>.</li>
+          <li>Digite o nome: <code>pacientes</code> e defina 7 colunas.</li>
+          <li>Preencha os campos de cada coluna conforme abaixo:</li>
+        </ol>
+        <ul class="substeps">
+          <li><code>id_paciente</code> — INT, A_I, Primária</li>
+          <li><code>nome</code> — VARCHAR(150), NOT NULL</li>
+          <li><code>email</code> — VARCHAR(120)</li>
+          <li><code>telefone</code> — VARCHAR(20)</li>
+          <li><code>data_nascimento</code> — DATE</li>
+          <li><code>sexo</code> — CHAR(1)</li>
+          <li><code>ativo</code> — TINYINT(1), padrão 1</li>
+        </ul>
+      </section>
+
+      <section id="medicos" class="section">
+        <h2>Criar tabela Médicos</h2>
+        <ol class="steps">
+          <li>Clique em <strong>Criar tabela</strong> novamente.</li>
+          <li>Nome: <code>medicos</code>, 6 colunas.</li>
+          <li>Adicione as colunas:</li>
+        </ol>
+        <ul class="substeps">
+          <li><code>id_medico</code> — INT, A_I, Primária</li>
+          <li><code>nome</code> — VARCHAR(150), NOT NULL</li>
+          <li><code>crm</code> — VARCHAR(20), UNIQUE</li>
+          <li><code>especialidade</code> — VARCHAR(100)</li>
+          <li><code>email</code> — VARCHAR(120)</li>
+          <li><code>telefone</code> — VARCHAR(20)</li>
+        </ul>
+      </section>
+
+      <section id="consultas" class="section">
+        <h2>Criar tabela Consultas</h2>
+        <ol class="steps">
+          <li>Clique em <strong>Criar tabela</strong>.</li>
+          <li>Nome: <code>consultas</code>, 6 colunas.</li>
+          <li>Adicione as colunas:</li>
+        </ol>
+        <ul class="substeps">
+          <li><code>id_consulta</code> — INT, A_I, Primária</li>
+          <li><code>id_paciente</code> — INT (será FK para <code>pacientes.id_paciente</code>)</li>
+          <li><code>id_medico</code> — INT (será FK para <code>medicos.id_medico</code>)</li>
+          <li><code>data_hora</code> — DATETIME</li>
+          <li><code>status</code> — VARCHAR(50)</li>
+          <li><code>observacoes</code> — TEXT</li>
+        </ul>
+      </section>
+
+      <section id="exames" class="section">
+        <h2>Criar tabela Exames</h2>
+        <ol class="steps">
+          <li>Clique em <strong>Criar tabela</strong>.</li>
+          <li>Nome: <code>exames</code>, 4 colunas.</li>
+          <li>Adicione as colunas:</li>
+        </ol>
+        <ul class="substeps">
+          <li><code>id_exame</code> — INT, A_I, Primária</li>
+          <li><code>nome</code> — VARCHAR(150), NOT NULL</li>
+          <li><code>descricao</code> — TEXT</li>
+          <li><code>valor</code> — DECIMAL(10,2)</li>
+        </ul>
+      </section>
+
+      <section id="consultas-exames" class="section">
+        <h2>Criar tabela Consultas_Exames</h2>
+        <ol class="steps">
+          <li>Clique em <strong>Criar tabela</strong>.</li>
+          <li>Nome: <code>consultas_exames</code>, 4 colunas.</li>
+          <li>Adicione as colunas:</li>
+        </ol>
+        <ul class="substeps">
+          <li><code>id_consulta_exame</code> — INT, A_I, Primária</li>
+          <li><code>id_consulta</code> — INT (FK para <code>consultas.id_consulta</code>)</li>
+          <li><code>id_exame</code> — INT (FK para <code>exames.id_exame</code>)</li>
+          <li><code>quantidade</code> — INT, padrão 1</li>
+        </ul>
+      </section>
+
+      <section id="relacoes" class="section">
+        <h2>Definir Relações (Chaves Estrangeiras)</h2>
+        <p>Para criar as relações entre tabelas no phpMyAdmin:</p>
+        <ol class="steps">
+          <li>Selecione a tabela <code>consultas</code> → Estrutura → Relações:</li>
+          <ul class="substeps">
+            <li><code>id_paciente</code> → <code>pacientes.id_paciente</code></li>
+            <li><code>id_medico</code> → <code>medicos.id_medico</code></li>
+          </ul>
+          <li>Selecione a tabela <code>consultas_exames</code> → Estrutura → Relações:</li>
+          <ul class="substeps">
+            <li><code>id_consulta</code> → <code>consultas.id_consulta</code></li>
+            <li><code>id_exame</code> → <code>exames.id_exame</code></li>
+          </ul>
+        </ol>
+        <p>Assim, o banco terá integridade referencial e permitirá consultas entre as tabelas corretamente.</p>
+      </section>
+
+      <section id="importar" class="section">
+        <h2>Importar SQL de Verificação</h2>
+        <ol class="steps">
+          <li>Baixe o arquivo <code>clinica_verificacao.sql</code>.</li>
+          <li>No phpMyAdmin, clique em <strong>Importar</strong> e selecione o arquivo.</li>
+          <li>Execute e verifique se todas as tabelas e chaves foram criadas corretamente.</li>
+        </ol>
+        <a href="files/db-checker.zip" class="download-link" download>📥 Baixar SQL de verificação</a>
+      </section>
+
+      <section id="popular" class="section">
+        <h2>Adicionar dados manualmente (via interface)</h2>
+        <p>Você pode adicionar registros diretamente no phpMyAdmin para testar o funcionamento do banco.</p>
+      
+        <h3>Pacientes</h3>
+        <ul class="substeps">
+          <li>Adicionar paciente 1:
+            <ul>
+              <li>Nome: João Silva</li>
+              <li>Email: joao.silva@email.com</li>
+              <li>Telefone: (11) 99999-1111</li>
+              <li>Data de nascimento: 1985-03-12</li>
+              <li>Sexo: M</li>
+              <li>Ativo: 1</li>
+            </ul>
+          </li>
+          <li>Adicionar paciente 2:
+            <ul>
+              <li>Nome: Maria Oliveira</li>
+              <li>Email: maria.oliveira@email.com</li>
+              <li>Telefone: (11) 98888-2222</li>
+              <li>Data de nascimento: 1990-07-25</li>
+              <li>Sexo: F</li>
+              <li>Ativo: 1</li>
+            </ul>
+          </li>
+        </ul>
+      
+        <h3>Médicos</h3>
+        <ul class="substeps">
+          <li>Adicionar médico 1:
+            <ul>
+              <li>Nome: Dr. Ana Souza</li>
+              <li>CRM: 12345-SP</li>
+              <li>Especialidade: Cardiologia</li>
+              <li>Email: ana.souza@email.com</li>
+              <li>Telefone: (11) 97777-3333</li>
+            </ul>
+          </li>
+          <li>Adicionar médico 2:
+            <ul>
+              <li>Nome: Dr. Bruno Lima</li>
+              <li>CRM: 67890-SP</li>
+              <li>Especialidade: Pediatria</li>
+              <li>Email: bruno.lima@email.com</li>
+              <li>Telefone: (11) 96666-4444</li>
+            </ul>
+          </li>
+        </ul>
+      
+        <h3>Exames</h3>
+        <ul class="substeps">
+          <li>Adicionar exame 1:
+            <ul>
+              <li>Nome: Hemograma</li>
+              <li>Descrição: Exame de sangue completo</li>
+              <li>Valor: 50.00</li>
+            </ul>
+          </li>
+          <li>Adicionar exame 2:
+            <ul>
+              <li>Nome: Raio-X</li>
+              <li>Descrição: Radiografia de tórax</li>
+              <li>Valor: 80.00</li>
+            </ul>
+          </li>
+        </ul>
+      
+        <h3>Consultas</h3>
+        <ul class="substeps">
+          <li>Adicionar consulta 1:
+            <ul>
+              <li>ID Paciente: 1 (João Silva)</li>
+              <li>ID Médico: 1 (Dr. Ana Souza)</li>
+              <li>Data/Hora: 2025-09-01 09:00:00</li>
+              <li>Status: Agendada</li>
+              <li>Observações: Primeira consulta de avaliação</li>
+            </ul>
+          </li>
+          <li>Adicionar consulta 2:
+            <ul>
+              <li>ID Paciente: 2 (Maria Oliveira)</li>
+              <li>ID Médico: 2 (Dr. Bruno Lima)</li>
+              <li>Data/Hora: 2025-09-01 10:30:00</li>
+              <li>Status: Agendada</li>
+              <li>Observações: Consulta de rotina</li>
+            </ul>
+          </li>
+        </ul>
+      
+        <h3>Consultas_Exames</h3>
+        <ul class="substeps">
+          <li>Associar exames à consulta 1:
+            <ul>
+              <li>ID Consulta: 1</li>
+              <li>ID Exame: 1 (Hemograma)</li>
+              <li>Quantidade: 1</li>
+            </ul>
+          </li>
+          <li>Associar exames à consulta 2:
+            <ul>
+              <li>ID Consulta: 2</li>
+              <li>ID Exame: 2 (Raio-X)</li>
+              <li>Quantidade: 1</li>
+            </ul>
+          </li>
+        </ul>
+      </section>
+      
+      <section id="conclusao" class="section">
+        <h2>Conclusão e SQL para popular o banco</h2>
+        <p>Agora que você adicionou alguns registros manualmente, pode utilizar o SQL para popular o banco com muitos mais dados de teste.</p>
+        <ol class="steps">
+          <li>Baixe o arquivo <code>clinica_popular.sql</code>.</li>
+          <li>No phpMyAdmin, clique em <strong>Importar</strong> e selecione o arquivo.</li>
+          <li>Execute e verifique se os registros foram inseridos corretamente.</li>
+        </ol>
+        <a href="files/db-seed.zip" class="download-link" download>📥 Baixar SQL para popular banco</a>
+        <p>Com isso, o banco <code>clinica_medica</code> estará totalmente funcional para práticas e testes.</p>
+      </section>      
+
+      <footer>
+        Feito com ❤️ pelo professor Lucas
+      </footer>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
